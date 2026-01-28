@@ -421,6 +421,7 @@ export function getDataStyle(
 }
 
 // Nolli Map Style - shows public/private space distinction
+// Uses high-contrast black & white rendering to emphasize urban form
 export function getNolliStyle(
   basemap: Basemap = 'carto-light'
 ): StyleSpecification {
@@ -437,19 +438,23 @@ export function getNolliStyle(
       type: 'raster',
       source: 'basemap',
       paint: {
-        'raster-opacity': 0.15,
+        'raster-opacity': 0.7,
         'raster-saturation': -1.0,
-        'raster-contrast': 0.3
+        'raster-contrast': 0.8,
+        'raster-brightness-min': 0.0,
+        'raster-brightness-max': 0.6
       }
     },
     {
-      id: 'hillshade',
+      id: 'hillshade-base',
       type: 'hillshade',
       source: 'terrain-hillshade',
       paint: {
-        'hillshade-exaggeration': 0.1,
+        'hillshade-exaggeration': 0.8,
         'hillshade-shadow-color': '#000000',
-        'hillshade-highlight-color': '#ffffff'
+        'hillshade-highlight-color': '#ffffff',
+        'hillshade-accent-color': '#333333',
+        'hillshade-illumination-direction': 315
       }
     }
   ];
@@ -480,17 +485,18 @@ export function getNolliStyle(
         maxzoom: 15
       }
     },
-    terrain: { source: 'terrain-3d', exaggeration: 0.3 },
+    terrain: { source: 'terrain-3d', exaggeration: 0.5 },
     sky: {
-      'sky-color': '#ffffff',
-      'horizon-color': '#f5f5f5',
+      'sky-color': '#f0f0f0',
+      'horizon-color': '#e0e0e0',
       'fog-color': '#ffffff'
     },
     layers
   };
 }
 
-// Figure Ground Style - building footprints only
+// Figure Ground Style - building footprints / urban mass diagram
+// Dark background with light built form - classic architectural diagram style
 export function getFigureGroundStyle(
   basemap: Basemap = 'carto-dark-nolabels'
 ): StyleSpecification {
@@ -500,26 +506,30 @@ export function getFigureGroundStyle(
     {
       id: 'background',
       type: 'background',
-      paint: { 'background-color': '#1a1a1a' }
+      paint: { 'background-color': '#0a0a0a' }
     },
     {
       id: 'basemap-tiles',
       type: 'raster',
       source: 'basemap',
       paint: {
-        'raster-opacity': 0.2,
+        'raster-opacity': 0.6,
         'raster-saturation': -1.0,
-        'raster-brightness-max': 0.3
+        'raster-contrast': 0.9,
+        'raster-brightness-min': 0.0,
+        'raster-brightness-max': 0.5
       }
     },
     {
-      id: 'hillshade',
+      id: 'hillshade-inverted',
       type: 'hillshade',
       source: 'terrain-hillshade',
       paint: {
-        'hillshade-exaggeration': 0.15,
+        'hillshade-exaggeration': 0.9,
         'hillshade-shadow-color': '#ffffff',
-        'hillshade-highlight-color': '#333333'
+        'hillshade-highlight-color': '#0a0a0a',
+        'hillshade-accent-color': '#666666',
+        'hillshade-illumination-direction': 135
       }
     }
   ];
@@ -550,37 +560,38 @@ export function getFigureGroundStyle(
         maxzoom: 15
       }
     },
-    terrain: { source: 'terrain-3d', exaggeration: 0.2 },
+    terrain: { source: 'terrain-3d', exaggeration: 0.8 },
     sky: {
-      'sky-color': '#0a0a0a',
-      'horizon-color': '#1a1a1a',
-      'fog-color': '#0a0a0a'
+      'sky-color': '#050505',
+      'horizon-color': '#0a0a0a',
+      'fog-color': '#000000'
     },
     layers
   };
 }
 
 // LULC (Land Use Land Cover) Style
+// Uses terrain elevation as proxy for land cover types
+// Low areas (green) = vegetation/forest, High areas (tan) = urban/agricultural
 export function getLulcStyle(
   colorScheme: ColorScheme = 'viridis',
   basemap: Basemap = 'carto-light'
 ): StyleSpecification {
   const basemapConfig = basemapTiles[basemap];
-  const colors = colorSchemes[colorScheme];
 
   const layers: LayerSpecification[] = [
     {
       id: 'background',
       type: 'background',
-      paint: { 'background-color': '#f8fafc' }
+      paint: { 'background-color': '#e8f0e8' }
     },
     {
       id: 'basemap-tiles',
       type: 'raster',
       source: 'basemap',
       paint: {
-        'raster-opacity': 0.25,
-        'raster-saturation': -0.8
+        'raster-opacity': 0.2,
+        'raster-saturation': -0.9
       }
     },
     {
@@ -588,11 +599,23 @@ export function getLulcStyle(
       type: 'hillshade',
       source: 'terrain-hillshade',
       paint: {
-        'hillshade-exaggeration': 0.7,
-        'hillshade-shadow-color': '#2d5a27',
-        'hillshade-highlight-color': '#f5deb3',
-        'hillshade-accent-color': colors.accent,
+        'hillshade-exaggeration': 1.0,
+        'hillshade-shadow-color': '#1a5c1a',
+        'hillshade-highlight-color': '#d4a574',
+        'hillshade-accent-color': '#8b7355',
         'hillshade-illumination-direction': 315
+      }
+    },
+    {
+      id: 'lulc-hillshade-2',
+      type: 'hillshade',
+      source: 'terrain-data',
+      paint: {
+        'hillshade-exaggeration': 0.6,
+        'hillshade-shadow-color': '#2d8a2d',
+        'hillshade-highlight-color': '#f5e6d3',
+        'hillshade-accent-color': '#6b8e23',
+        'hillshade-illumination-direction': 225
       }
     }
   ];
@@ -621,46 +644,63 @@ export function getLulcStyle(
         tileSize: 256,
         encoding: 'terrarium',
         maxzoom: 15
+      },
+      'terrain-data': {
+        type: 'raster-dem',
+        tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        encoding: 'terrarium',
+        maxzoom: 15
       }
     },
-    terrain: { source: 'terrain-3d', exaggeration: 0.8 },
+    terrain: { source: 'terrain-3d', exaggeration: 1.2 },
     sky: {
-      'sky-color': '#e8f4e8',
-      'horizon-color': '#d4e8d4',
-      'fog-color': '#f0f8f0'
+      'sky-color': '#c5e8c5',
+      'horizon-color': '#a8d8a8',
+      'fog-color': '#d8f0d8'
     },
     layers
   };
 }
 
 // Sun Path / Shadow Analysis Style
+// Shows dramatic shadows based on sun position (time of day)
 export function getSunpathStyle(
   timeOfDay: number = 10,
   basemap: Basemap = 'carto-light'
 ): StyleSpecification {
   const basemapConfig = basemapTiles[basemap];
 
-  // Calculate sun angle based on time of day
-  const sunAngle = ((timeOfDay - 6) / 12) * 180; // 6am = 0°, 12pm = 90°, 6pm = 180°
-  const illuminationDirection = (sunAngle + 90) % 360; // Perpendicular to sun position
+  // Calculate sun angle based on time of day (6am = sunrise, 6pm = sunset)
+  const sunAngle = ((timeOfDay - 6) / 12) * 180;
+  const illuminationDirection = (sunAngle + 90) % 360;
 
-  // Shadow intensity based on sun elevation
-  const sunElevation = Math.sin((timeOfDay - 6) / 12 * Math.PI);
-  const shadowIntensity = Math.max(0.2, 1 - sunElevation);
+  // Shadow intensity - longer shadows at dawn/dusk
+  const hourFromNoon = Math.abs(timeOfDay - 12);
+  const shadowIntensity = 0.4 + (hourFromNoon / 6) * 0.6; // 0.4 at noon, 1.0 at 6am/6pm
+
+  // Determine lighting colors based on time
+  const isMorning = timeOfDay < 10;
+  const isEvening = timeOfDay > 16;
+  const isGoldenHour = isMorning || isEvening;
+
+  const shadowColor = isGoldenHour ? '#2d1b4e' : '#1a2744';
+  const highlightColor = isGoldenHour ? '#ffdd88' : '#fff8dc';
+  const accentColor = isGoldenHour ? '#ff6600' : '#ffa500';
 
   const layers: LayerSpecification[] = [
     {
       id: 'background',
       type: 'background',
-      paint: { 'background-color': '#fff8e7' }
+      paint: { 'background-color': isGoldenHour ? '#fff0d4' : '#f5f8fa' }
     },
     {
       id: 'basemap-tiles',
       type: 'raster',
       source: 'basemap',
       paint: {
-        'raster-opacity': 0.3,
-        'raster-saturation': -0.5
+        'raster-opacity': 0.25,
+        'raster-saturation': isGoldenHour ? 0.2 : -0.3
       }
     },
     {
@@ -669,9 +709,21 @@ export function getSunpathStyle(
       source: 'terrain-hillshade',
       paint: {
         'hillshade-exaggeration': Math.min(1.0, shadowIntensity),
-        'hillshade-shadow-color': '#1a1a3a',
-        'hillshade-highlight-color': '#fffacd',
-        'hillshade-accent-color': '#ff8c00',
+        'hillshade-shadow-color': shadowColor,
+        'hillshade-highlight-color': highlightColor,
+        'hillshade-accent-color': accentColor,
+        'hillshade-illumination-direction': illuminationDirection
+      }
+    },
+    {
+      id: 'shadow-overlay',
+      type: 'hillshade',
+      source: 'terrain-data',
+      paint: {
+        'hillshade-exaggeration': Math.min(0.8, shadowIntensity * 0.7),
+        'hillshade-shadow-color': '#000033',
+        'hillshade-highlight-color': 'transparent',
+        'hillshade-accent-color': '#333366',
         'hillshade-illumination-direction': illuminationDirection
       }
     }
@@ -701,13 +753,20 @@ export function getSunpathStyle(
         tileSize: 256,
         encoding: 'terrarium',
         maxzoom: 15
+      },
+      'terrain-data': {
+        type: 'raster-dem',
+        tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        encoding: 'terrarium',
+        maxzoom: 15
       }
     },
-    terrain: { source: 'terrain-3d', exaggeration: 1.5 },
+    terrain: { source: 'terrain-3d', exaggeration: 2.0 },
     sky: {
-      'sky-color': timeOfDay < 7 || timeOfDay > 17 ? '#ff9966' : '#87ceeb',
-      'horizon-color': timeOfDay < 7 || timeOfDay > 17 ? '#ffcc99' : '#c5e5f5',
-      'fog-color': '#fffacd'
+      'sky-color': isGoldenHour ? '#ff9966' : '#87ceeb',
+      'horizon-color': isGoldenHour ? '#ffcc99' : '#c5e5f5',
+      'fog-color': isGoldenHour ? '#ffeedd' : '#f0f8ff'
     },
     layers
   };
