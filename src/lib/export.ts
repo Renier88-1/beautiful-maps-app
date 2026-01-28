@@ -105,48 +105,179 @@ export async function exportMapAsJpeg(
   });
 }
 
-// Create a simple GIF animation (orbit around map)
+// Capture a frame from the map canvas
+async function captureFrame(
+  map: MapLibreMap,
+  width: number,
+  height: number
+): Promise<ImageData> {
+  const canvas = map.getCanvas();
+
+  // Wait for render
+  await new Promise<void>((resolve) => {
+    map.once('render', resolve);
+    map.triggerRepaint();
+  });
+
+  // Small delay to ensure render is complete
+  await new Promise(resolve => setTimeout(resolve, 50));
+
+  // Create offscreen canvas and capture
+  const exportCanvas = document.createElement('canvas');
+  exportCanvas.width = width;
+  exportCanvas.height = height;
+  const ctx = exportCanvas.getContext('2d');
+
+  if (!ctx) {
+    throw new Error('Could not create canvas context');
+  }
+
+  // Calculate crop to center
+  const sourceAspect = canvas.width / canvas.height;
+  const targetAspect = width / height;
+
+  let sourceX = 0;
+  let sourceY = 0;
+  let sourceWidth = canvas.width;
+  let sourceHeight = canvas.height;
+
+  if (sourceAspect > targetAspect) {
+    sourceWidth = canvas.height * targetAspect;
+    sourceX = (canvas.width - sourceWidth) / 2;
+  } else {
+    sourceHeight = canvas.width / targetAspect;
+    sourceY = (canvas.height - sourceHeight) / 2;
+  }
+
+  ctx.drawImage(
+    canvas,
+    sourceX, sourceY, sourceWidth, sourceHeight,
+    0, 0, width, height
+  );
+
+  return ctx.getImageData(0, 0, width, height);
+}
+
+// Create a GIF animation (orbit around map)
 export async function exportMapAsGif(
   map: MapLibreMap,
   filename: string = 'beautiful-map',
   frames: number = 36,
-  duration: number = 5000
+  duration: number = 5000,
+  width: number = 640,
+  height: number = 360
 ): Promise<void> {
-  const canvas = map.getCanvas();
+  // Dynamically import gif.js
+  const GIF = (await import('gif.js')).default;
 
-  // For a simple implementation, we'll export multiple PNGs
-  // A full GIF implementation would require gif.js or similar
   const originalBearing = map.getBearing();
   const bearingStep = 360 / frames;
-  const frameDelay = duration / frames;
+  const frameDelay = Math.round(duration / frames);
 
-  const capturedFrames: Blob[] = [];
+  // Create GIF encoder
+  const gif = new GIF({
+    workers: 2,
+    quality: 10,
+    width,
+    height,
+    workerScript: '/gif.worker.js'
+  });
 
+  // Capture frames
   for (let i = 0; i < frames; i++) {
-    map.setBearing(originalBearing + (i * bearingStep));
+    const bearing = originalBearing + (i * bearingStep);
+    map.setBearing(bearing);
 
-    // Wait for map to render
-    await new Promise<void>((resolve) => {
-      map.once('render', () => {
-        canvas.toBlob((blob) => {
-          if (blob) capturedFrames.push(blob);
-          resolve();
-        }, 'image/png');
-      });
-      map.triggerRepaint();
-    });
-
-    await new Promise(resolve => setTimeout(resolve, frameDelay / 10));
+    const imageData = await captureFrame(map, width, height);
+    gif.addFrame(imageData, { delay: frameDelay });
   }
 
   // Reset bearing
   map.setBearing(originalBearing);
 
-  // For now, just save the first frame as PNG
-  // Full GIF encoding would require additional library
-  if (capturedFrames.length > 0) {
-    saveAs(capturedFrames[0], `${filename}.png`);
+  // Render and save
+  return new Promise((resolve, reject) => {
+    gif.on('finished', (blob: Blob) => {
+      saveAs(blob, `${filename}.gif`);
+      resolve();
+    });
+
+    gif.on('error', (err: Error) => {
+      reject(err);
+    });
+
+    gif.render();
+  });
+}
+
+// Export map as MP4 video using MediaRecorder
+export async function exportMapAsMp4(
+  map: MapLibreMap,
+  filename: string = 'beautiful-map',
+  duration: number = 5000
+): Promise<void> {
+  const canvas = map.getCanvas();
+  const originalBearing = map.getBearing();
+  const frames = 60; // 60 frames for smooth animation
+  const bearingStep = 360 / frames;
+
+  // Check if MediaRecorder is supported
+  if (!MediaRecorder.isTypeSupported('video/webm')) {
+    throw new Error('Video recording is not supported in this browser');
   }
+
+  // Create a MediaRecorder
+  const stream = canvas.captureStream(30); // 30 fps
+  const mediaRecorder = new MediaRecorder(stream, {
+    mimeType: 'video/webm;codecs=vp9',
+    videoBitsPerSecond: 5000000 // 5 Mbps
+  });
+
+  const chunks: Blob[] = [];
+
+  mediaRecorder.ondataavailable = (e) => {
+    if (e.data.size > 0) {
+      chunks.push(e.data);
+    }
+  };
+
+  return new Promise((resolve, reject) => {
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(chunks, { type: 'video/webm' });
+      // Note: We save as .webm since browsers can't natively encode MP4
+      // Users can convert to MP4 using online tools or ffmpeg
+      saveAs(blob, `${filename}.webm`);
+      map.setBearing(originalBearing);
+      resolve();
+    };
+
+    mediaRecorder.onerror = (e) => {
+      map.setBearing(originalBearing);
+      reject(e);
+    };
+
+    mediaRecorder.start();
+
+    // Animate the map
+    let frameIndex = 0;
+    const frameInterval = duration / frames;
+
+    const animate = () => {
+      if (frameIndex >= frames) {
+        mediaRecorder.stop();
+        return;
+      }
+
+      const bearing = originalBearing + (frameIndex * bearingStep);
+      map.setBearing(bearing);
+      map.triggerRepaint();
+
+      frameIndex++;
+      setTimeout(animate, frameInterval);
+    };
+
+    animate();
+  });
 }
 
 // Get aspect ratio dimensions

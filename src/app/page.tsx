@@ -17,7 +17,7 @@ import {
 } from '@/components';
 import { useAuth } from '@/hooks/useAuth';
 import { useSavedProjects } from '@/hooks/useSavedProjects';
-import { exportMapWithSettings, exportMapAsGif } from '@/lib/export';
+import { exportMapWithSettings, exportMapAsGif, exportMapAsMp4 } from '@/lib/export';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import type {
   MapStyle,
@@ -252,6 +252,38 @@ export default function Home() {
     });
   }, [currentStyle]);
 
+  // Handle sunpath settings change
+  const handleSunpathChange = useCallback((settings: Partial<SunpathSettings>) => {
+    setSunpathSettings(prev => {
+      const newSettings = { ...prev, ...settings };
+
+      if (currentStyle === 'sunpath') {
+        mapRef.current?.setStyle('sunpath', {
+          basemap: newSettings.basemap,
+          timeOfDay: newSettings.time
+        });
+      }
+
+      return newSettings;
+    });
+  }, [currentStyle]);
+
+  // Handle LULC settings change
+  const handleLulcChange = useCallback((settings: Partial<LulcSettings>) => {
+    setLulcSettings(prev => {
+      const newSettings = { ...prev, ...settings };
+
+      if (currentStyle === 'lulc') {
+        mapRef.current?.setStyle('lulc', {
+          basemap: newSettings.basemap,
+          colorScheme: newSettings.colorScheme
+        });
+      }
+
+      return newSettings;
+    });
+  }, [currentStyle]);
+
   // Handle export
   const handleExport = useCallback(async (settings: ExportSettings) => {
     const map = mapRef.current?.map;
@@ -265,6 +297,8 @@ export default function Home() {
 
       if (settings.format === 'gif') {
         await exportMapAsGif(map, filename);
+      } else if (settings.format === 'mp4') {
+        await exportMapAsMp4(map, filename);
       } else {
         // Use the new function that respects aspect ratio and quality
         await exportMapWithSettings(map, settings, filename);
@@ -541,9 +575,13 @@ export default function Home() {
               cinematicSettings={cinematicSettings}
               minimalistSettings={minimalistSettings}
               dataSettings={dataSettings}
+              sunpathSettings={sunpathSettings}
+              lulcSettings={lulcSettings}
               onCinematicChange={handleCinematicChange}
               onMinimalistChange={handleMinimalistChange}
               onDataChange={handleDataChange}
+              onSunpathChange={handleSunpathChange}
+              onLulcChange={handleLulcChange}
             />
 
             {/* Export Panel */}

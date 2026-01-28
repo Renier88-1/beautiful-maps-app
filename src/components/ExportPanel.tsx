@@ -79,7 +79,8 @@ export function ExportPanel({
         options={[
           { value: 'png', label: 'PNG (Lossless)' },
           { value: 'jpg', label: 'JPEG (Smaller)' },
-          { value: 'gif', label: 'GIF (Animation)' }
+          { value: 'gif', label: 'GIF (Animation)' },
+          { value: 'mp4', label: 'Video (WebM)' }
         ]}
       />
 
@@ -121,7 +122,15 @@ export function ExportPanel({
       {settings.format === 'gif' && (
         <div className="p-3 bg-yellow-50 rounded-lg">
           <p className="text-xs text-yellow-700">
-            GIF export will create a rotating animation around your current view.
+            GIF export creates a 360° rotating animation (640x360px, ~5 seconds).
+          </p>
+        </div>
+      )}
+
+      {settings.format === 'mp4' && (
+        <div className="p-3 bg-blue-50 rounded-lg">
+          <p className="text-xs text-blue-700">
+            Video export creates a 360° rotating animation as WebM format. Can be converted to MP4 using online tools.
           </p>
         </div>
       )}

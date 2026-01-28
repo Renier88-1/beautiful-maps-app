@@ -1,17 +1,21 @@
 'use client';
 
-import React from 'react';
-import { NeomorphicSlider, NeomorphicSelect, NeomorphicCard } from './ui';
-import type { MapStyle, CinematicSettings, MinimalistSettings, DataSettings, Basemap, DataLayer, ColorScheme } from '@/types';
+import React, { useState, useEffect, useRef } from 'react';
+import { NeomorphicSlider, NeomorphicSelect, NeomorphicCard, NeomorphicButton } from './ui';
+import type { MapStyle, CinematicSettings, MinimalistSettings, DataSettings, SunpathSettings, LulcSettings, Basemap, DataLayer, ColorScheme } from '@/types';
 
 interface StylePanelProps {
   currentStyle: MapStyle;
   cinematicSettings: CinematicSettings;
   minimalistSettings: MinimalistSettings;
   dataSettings: DataSettings;
+  sunpathSettings?: SunpathSettings;
+  lulcSettings?: LulcSettings;
   onCinematicChange: (settings: Partial<CinematicSettings>) => void;
   onMinimalistChange: (settings: Partial<MinimalistSettings>) => void;
   onDataChange: (settings: Partial<DataSettings>) => void;
+  onSunpathChange?: (settings: Partial<SunpathSettings>) => void;
+  onLulcChange?: (settings: Partial<LulcSettings>) => void;
 }
 
 const basemapOptions = [
@@ -122,10 +126,17 @@ export function StylePanel({
   cinematicSettings,
   minimalistSettings,
   dataSettings,
+  sunpathSettings,
+  lulcSettings,
   onCinematicChange,
   onMinimalistChange,
-  onDataChange
+  onDataChange,
+  onSunpathChange,
+  onLulcChange
 }: StylePanelProps) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const playIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
   const formatTime = (hour: number) => {
     const h = Math.floor(hour);
     const period = h >= 12 ? 'PM' : 'AM';
@@ -133,9 +144,31 @@ export function StylePanel({
     return `${displayHour}:00 ${period}`;
   };
 
+  // Sun path animation
+  useEffect(() => {
+    if (isPlaying && currentStyle === 'sunpath' && onSunpathChange && sunpathSettings) {
+      playIntervalRef.current = setInterval(() => {
+        const newTime = (sunpathSettings.time + 0.5) % 24;
+        onSunpathChange({ time: newTime < 5 ? 5 : newTime > 21 ? 5 : newTime });
+      }, 200);
+    } else {
+      if (playIntervalRef.current) {
+        clearInterval(playIntervalRef.current);
+        playIntervalRef.current = null;
+      }
+    }
+    return () => {
+      if (playIntervalRef.current) {
+        clearInterval(playIntervalRef.current);
+      }
+    };
+  }, [isPlaying, currentStyle, sunpathSettings, onSunpathChange]);
+
   const getCurrentBasemap = (): Basemap => {
     if (currentStyle === 'cinematic') return cinematicSettings.basemap;
     if (currentStyle === 'minimalist') return minimalistSettings.basemap;
+    if (currentStyle === 'sunpath' && sunpathSettings) return sunpathSettings.basemap;
+    if (currentStyle === 'lulc' && lulcSettings) return lulcSettings.basemap;
     return dataSettings.basemap;
   };
 
@@ -144,6 +177,10 @@ export function StylePanel({
       onCinematicChange({ basemap });
     } else if (currentStyle === 'minimalist') {
       onMinimalistChange({ basemap });
+    } else if (currentStyle === 'sunpath' && onSunpathChange) {
+      onSunpathChange({ basemap });
+    } else if (currentStyle === 'lulc' && onLulcChange) {
+      onLulcChange({ basemap });
     } else {
       onDataChange({ basemap });
     }
@@ -286,6 +323,171 @@ export function StylePanel({
               className="h-4 rounded-lg overflow-hidden"
               style={{ background: colorGradients[dataSettings.colorScheme] }}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Sun Path Controls */}
+      {currentStyle === 'sunpath' && sunpathSettings && onSunpathChange && (
+        <div className="space-y-4">
+          <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
+            <p className="text-xs text-amber-700">
+              Visualize sun position and shadows throughout the day. Use the play button to animate.
+            </p>
+          </div>
+
+          <NeomorphicSlider
+            label="Time of Day"
+            value={sunpathSettings.time}
+            onChange={(value) => onSunpathChange({ time: value })}
+            min={5}
+            max={21}
+            step={0.5}
+            formatValue={formatTime}
+          />
+
+          {/* Time presets */}
+          <div className="grid grid-cols-4 gap-2">
+            {[
+              { time: 6, label: 'Dawn', emoji: '🌅' },
+              { time: 10, label: 'Morning', emoji: '🌤️' },
+              { time: 14, label: 'Afternoon', emoji: '☀️' },
+              { time: 18, label: 'Dusk', emoji: '🌇' }
+            ].map((preset) => (
+              <button
+                key={preset.time}
+                onClick={() => onSunpathChange({ time: preset.time })}
+                className={`
+                  p-2 rounded-lg text-center transition-all duration-200
+                  ${Math.abs(sunpathSettings.time - preset.time) < 1
+                    ? 'bg-amber-100 shadow-inner'
+                    : 'bg-neutral-50 hover:bg-neutral-100'
+                  }
+                `}
+              >
+                <div className="text-lg">{preset.emoji}</div>
+                <div className="text-xs text-neutral-600">{preset.label}</div>
+              </button>
+            ))}
+          </div>
+
+          {/* Play/Pause button */}
+          <div className="flex items-center gap-3">
+            <NeomorphicButton
+              onClick={() => setIsPlaying(!isPlaying)}
+              variant={isPlaying ? 'primary' : 'default'}
+              size="md"
+              className="flex-1"
+            >
+              {isPlaying ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                  </svg>
+                  Pause
+                </span>
+              ) : (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                  Play Animation
+                </span>
+              )}
+            </NeomorphicButton>
+          </div>
+
+          <div className="pt-2 border-t border-neutral-200">
+            <label className="block text-xs text-neutral-500 mb-1">Date</label>
+            <input
+              type="date"
+              value={sunpathSettings.date}
+              onChange={(e) => onSunpathChange({ date: e.target.value })}
+              className="w-full px-3 py-2 rounded-lg border border-neutral-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+            />
+          </div>
+
+          <NeomorphicSlider
+            label="Shadow Opacity"
+            value={sunpathSettings.shadowOpacity}
+            onChange={(value) => onSunpathChange({ shadowOpacity: value })}
+            min={0.1}
+            max={1}
+            step={0.1}
+            formatValue={(v) => `${Math.round(v * 100)}%`}
+          />
+        </div>
+      )}
+
+      {/* LULC Controls */}
+      {currentStyle === 'lulc' && lulcSettings && onLulcChange && (
+        <div className="space-y-4">
+          <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+            <p className="text-xs text-green-700">
+              Land Use / Land Cover visualization. Green areas indicate vegetation, tan indicates developed/agricultural land.
+            </p>
+          </div>
+
+          <NeomorphicSelect
+            label="Color Scheme"
+            value={lulcSettings.colorScheme}
+            onChange={(value) => onLulcChange({ colorScheme: value as ColorScheme })}
+            options={colorSchemeOptions}
+          />
+
+          <NeomorphicSlider
+            label="Transparency"
+            value={lulcSettings.transparency}
+            onChange={(value) => onLulcChange({ transparency: value })}
+            min={0.3}
+            max={1}
+            step={0.1}
+            formatValue={(v) => `${Math.round(v * 100)}%`}
+          />
+
+          {/* LULC Legend */}
+          <div className="pt-2 border-t border-neutral-200">
+            <div className="text-xs font-semibold text-neutral-600 mb-2">Legend</div>
+            <div className="space-y-1.5">
+              {[
+                { color: '#1a5c1a', label: 'Forest / Vegetation' },
+                { color: '#2d8a2d', label: 'Grassland / Shrubs' },
+                { color: '#6b8e23', label: 'Agriculture' },
+                { color: '#d4a574', label: 'Urban / Built-up' },
+                { color: '#f5e6d3', label: 'Bare Land' }
+              ].map((item) => (
+                <div key={item.label} className="flex items-center gap-2">
+                  <div
+                    className="w-4 h-4 rounded-sm border border-neutral-300"
+                    style={{ backgroundColor: item.color }}
+                  />
+                  <span className="text-xs text-neutral-600">{item.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Nolli & Figure Ground info */}
+      {(currentStyle === 'nolli' || currentStyle === 'figure-ground') && (
+        <div className="space-y-4">
+          <div className={`p-3 rounded-lg border ${
+            currentStyle === 'nolli'
+              ? 'bg-neutral-50 border-neutral-200'
+              : 'bg-neutral-800 border-neutral-700'
+          }`}>
+            <p className={`text-xs ${currentStyle === 'nolli' ? 'text-neutral-700' : 'text-neutral-300'}`}>
+              {currentStyle === 'nolli'
+                ? 'Nolli map style shows urban form with emphasis on public vs private space. Building footprints require vector tile data.'
+                : 'Figure-ground diagram emphasizes built mass against open space. Currently showing terrain-based approximation.'
+              }
+            </p>
+          </div>
+          <div className="p-2 bg-yellow-50 rounded-lg border border-yellow-200">
+            <p className="text-xs text-yellow-700">
+              Note: True building footprints require vector tile integration (coming soon).
+            </p>
           </div>
         </div>
       )}
