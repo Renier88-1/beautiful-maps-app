@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS projects (
   location_zoom DOUBLE PRECISION NOT NULL,
   location_pitch DOUBLE PRECISION NOT NULL,
   location_bearing DOUBLE PRECISION NOT NULL,
-  style TEXT NOT NULL CHECK (style IN ('cinematic', 'minimalist', 'data')),
+  style TEXT NOT NULL CHECK (style IN ('cinematic', 'minimalist', 'data', 'nolli', 'figure-ground', 'lulc', 'sunpath', 'isochrone', 'comparison', 'roads', 'tree-canopy', 'lighthouse', '3d-city')),
   settings JSONB NOT NULL DEFAULT '{}',
   thumbnail TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
