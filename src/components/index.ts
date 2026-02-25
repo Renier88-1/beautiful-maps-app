@@ -9,3 +9,4 @@ export { MapView } from './MapView';
 export type { MapViewRef } from './MapView';
 export { AuthModal } from './AuthModal';
 export { MapTypeSelector } from './MapTypeSelector';
+export { ComparisonSlider } from './ComparisonSlider';

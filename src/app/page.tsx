@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
+import Link from 'next/link';
 import {
   MapView,
   MapViewRef,
@@ -11,6 +12,7 @@ import {
   ExportFrameOverlay,
   MapLegend,
   MapTypeSelector,
+  ComparisonSlider,
   NeomorphicCard,
   NeomorphicButton,
   AuthModal
@@ -28,8 +30,24 @@ import type {
   FigureGroundSettings,
   LulcSettings,
   SunpathSettings,
+  IsochroneSettings,
+  ComparisonSettings,
+  RoadsSettings,
+  TreeCanopySettings,
+  LighthouseSettings,
+  City3DSettings,
   ExportSettings
 } from '@/types';
+import {
+  generateIsochrones,
+  generateCircleIsochrones,
+  addIsochronesToMap,
+  removeIsochronesFromMap,
+  addClickMarker,
+  removeClickMarker,
+  startHeartbeatAnimation,
+  stopHeartbeatAnimation
+} from '@/lib/isochrone';
 
 export default function Home() {
   const mapRef = useRef<MapViewRef>(null);
@@ -136,6 +154,73 @@ export default function Home() {
     shadowOpacity: 0.6
   });
 
+  const [isochroneSettings, setIsochroneSettings] = useState<IsochroneSettings>({
+    basemap: 'carto-light',
+    mode: 'circles',
+    travelMode: 'walking',
+    intervals: [5, 10, 15, 20],
+    maxTime: 20,
+    colorScale: 'green-red',
+    transparency: 0.7,
+    showLabels: true,
+    clickedPoint: null,
+    isLoading: false,
+    draggable: false,
+    heartbeat: false
+  });
+
+  const [comparisonSettings, setComparisonSettings] = useState<ComparisonSettings>({
+    basemap: 'carto-light',
+    dataset: 'satellite',
+    leftYear: 2010,
+    rightYear: 2024,
+    sliderPosition: 50
+  });
+
+  const [roadsSettings, setRoadsSettings] = useState<RoadsSettings>({
+    basemap: 'carto-dark',
+    roadType: 'all',
+    colorMode: 'density',
+    lineWidth: 3,
+    showLabels: false,
+    colorScheme: 'heat',
+    transparency: 0.8
+  });
+
+  const [treeCanopySettings, setTreeCanopySettings] = useState<TreeCanopySettings>({
+    basemap: 'carto-light',
+    colorMode: 'density',
+    hexagonSize: 100,
+    minHeight: 3,
+    maxHeight: 30,
+    colorScheme: 'viridis',
+    transparency: 0.7,
+    show3D: true
+  });
+
+  const [lighthouseSettings, setLighthouseSettings] = useState<LighthouseSettings>({
+    basemap: 'carto-dark',
+    beamStyle: 'classic',
+    beamIntensity: 0.8,
+    beamRotation: 0,
+    animateBeam: true,
+    nightMode: true,
+    fogDensity: 0.5,
+    colorScheme: 'cool'
+  });
+
+  const [city3dSettings, setCity3dSettings] = useState<City3DSettings>({
+    basemap: 'carto-dark-nolabels',
+    renderStyle: 'stylized',
+    buildingHeight: 2.0,
+    showRoofs: true,
+    lightingAngle: 45,
+    ambientOcclusion: true,
+    colorScheme: 'plasma',
+    transparency: 1.0,
+    cameraOrbit: false
+  });
+
   // Handle location selection
   const handleLocationSelect = useCallback((lat: number, lng: number, name: string) => {
     setLocationName(name);
@@ -174,10 +259,37 @@ export default function Home() {
     } else if (style === 'sunpath') {
       options.basemap = sunpathSettings.basemap;
       options.timeOfDay = sunpathSettings.time;
+    } else if (style === 'isochrone') {
+      options.basemap = isochroneSettings.basemap;
+    } else if (style === 'comparison') {
+      options.basemap = comparisonSettings.basemap;
+    } else if (style === 'roads') {
+      options.basemap = roadsSettings.basemap;
+      options.colorScheme = roadsSettings.colorScheme;
+    } else if (style === 'tree-canopy') {
+      options.basemap = treeCanopySettings.basemap;
+      options.colorScheme = treeCanopySettings.colorScheme;
+    } else if (style === 'lighthouse') {
+      options.basemap = lighthouseSettings.basemap;
+      options.colorScheme = lighthouseSettings.colorScheme;
+    } else if (style === '3d-city') {
+      options.basemap = city3dSettings.basemap;
+      options.colorScheme = city3dSettings.colorScheme;
+    }
+
+    // Clear isochrones when switching away from isochrone mode
+    if (currentStyle === 'isochrone' && style !== 'isochrone') {
+      const map = mapRef.current?.map;
+      if (map) {
+        stopHeartbeatAnimation(map);
+        removeIsochronesFromMap(map);
+        removeClickMarker(map);
+      }
+      setIsochroneSettings(prev => ({ ...prev, clickedPoint: null }));
     }
 
     mapRef.current?.setStyle(style, options);
-  }, [cinematicSettings, minimalistSettings, dataSettings, nolliSettings, figureGroundSettings, lulcSettings, sunpathSettings]);
+  }, [cinematicSettings, minimalistSettings, dataSettings, nolliSettings, figureGroundSettings, lulcSettings, sunpathSettings, isochroneSettings, comparisonSettings, roadsSettings, treeCanopySettings, lighthouseSettings, city3dSettings, currentStyle]);
 
   // Handle reset - returns to default cinematic view
   const handleReset = useCallback(() => {
@@ -284,6 +396,262 @@ export default function Home() {
     });
   }, [currentStyle]);
 
+  // Handle Isochrone settings change
+  const handleIsochroneChange = useCallback(async (settings: Partial<IsochroneSettings>) => {
+    const map = mapRef.current?.map;
+
+    setIsochroneSettings(prev => {
+      const newSettings = { ...prev, ...settings };
+
+      // Handle basemap change
+      if (currentStyle === 'isochrone' && settings.basemap) {
+        mapRef.current?.setStyle('isochrone', {
+          basemap: newSettings.basemap
+        });
+      }
+
+      // Handle heartbeat toggle
+      if (settings.heartbeat !== undefined && map) {
+        if (settings.heartbeat && prev.clickedPoint) {
+          startHeartbeatAnimation(map, newSettings.colorScale, newSettings.transparency);
+        } else {
+          stopHeartbeatAnimation(map);
+        }
+      }
+
+      // Handle draggable toggle - re-add marker with new draggable setting
+      if (settings.draggable !== undefined && prev.clickedPoint && map) {
+        addClickMarker(
+          map,
+          prev.clickedPoint,
+          settings.draggable,
+          // onDrag - regenerate isochrones in real-time using synchronous circle generation
+          (newPoint) => {
+            const isochrones = generateCircleIsochrones(
+              newPoint,
+              newSettings.intervals,
+              newSettings.travelMode
+            );
+            addIsochronesToMap(map, isochrones, newSettings.colorScale, newSettings.transparency);
+            // Restart heartbeat if enabled
+            if (newSettings.heartbeat) {
+              startHeartbeatAnimation(map, newSettings.colorScale, newSettings.transparency);
+            }
+          },
+          // onDragEnd - regenerate with full settings (routed or circles)
+          async (newPoint) => {
+            setIsochroneSettings(p => ({ ...p, clickedPoint: newPoint, isLoading: newSettings.mode === 'routed' }));
+            const isochrones = await generateIsochrones(
+              newPoint,
+              newSettings.intervals,
+              newSettings.travelMode,
+              newSettings.mode
+            );
+            addIsochronesToMap(map, isochrones, newSettings.colorScale, newSettings.transparency);
+            setIsochroneSettings(p => ({ ...p, isLoading: false }));
+            // Restart heartbeat if enabled
+            if (newSettings.heartbeat) {
+              startHeartbeatAnimation(map, newSettings.colorScale, newSettings.transparency);
+            }
+          }
+        );
+      }
+
+      return newSettings;
+    });
+
+    // Regenerate isochrones if we have a clicked point and relevant settings changed
+    const shouldRegenerate = settings.travelMode || settings.intervals || settings.maxTime || settings.colorScale || settings.transparency || settings.mode;
+
+    setIsochroneSettings(prev => {
+      if (prev.clickedPoint && shouldRegenerate) {
+        if (map) {
+          // Set loading state for routed mode
+          const newSettings = { ...prev, ...settings };
+          if (newSettings.mode === 'routed') {
+            setIsochroneSettings(p => ({ ...p, isLoading: true }));
+          }
+
+          // Generate isochrones async
+          generateIsochrones(
+            prev.clickedPoint,
+            newSettings.intervals,
+            newSettings.travelMode,
+            newSettings.mode
+          ).then(isochrones => {
+            addIsochronesToMap(map, isochrones, newSettings.colorScale, newSettings.transparency);
+            setIsochroneSettings(p => ({ ...p, isLoading: false }));
+            // Restart heartbeat animation if enabled
+            if (newSettings.heartbeat) {
+              startHeartbeatAnimation(map, newSettings.colorScale, newSettings.transparency);
+            }
+          });
+        }
+      }
+      return { ...prev, ...settings };
+    });
+  }, [currentStyle]);
+
+  // Handle map click for isochrone
+  const handleMapClick = useCallback(async (lng: number, lat: number) => {
+    if (currentStyle !== 'isochrone') return;
+
+    const map = mapRef.current?.map;
+    if (!map) return;
+
+    const clickedPoint = { lng, lat };
+
+    // Set loading state for routed mode
+    if (isochroneSettings.mode === 'routed') {
+      setIsochroneSettings(prev => ({ ...prev, clickedPoint, isLoading: true }));
+    } else {
+      setIsochroneSettings(prev => ({ ...prev, clickedPoint }));
+    }
+
+    // Add marker with draggable support
+    addClickMarker(
+      map,
+      clickedPoint,
+      isochroneSettings.draggable,
+      // onDrag callback - real-time updates using synchronous circle generation
+      (newPoint) => {
+        // Use synchronous circle generation for real-time feedback during drag
+        const isochrones = generateCircleIsochrones(
+          newPoint,
+          isochroneSettings.intervals,
+          isochroneSettings.travelMode
+        );
+        addIsochronesToMap(map, isochrones, isochroneSettings.colorScale, isochroneSettings.transparency);
+        // Restart heartbeat if enabled
+        if (isochroneSettings.heartbeat) {
+          startHeartbeatAnimation(map, isochroneSettings.colorScale, isochroneSettings.transparency);
+        }
+      },
+      // onDragEnd callback - full regeneration with actual mode
+      async (newPoint) => {
+        setIsochroneSettings(prev => ({ ...prev, clickedPoint: newPoint, isLoading: isochroneSettings.mode === 'routed' }));
+        const isochrones = await generateIsochrones(
+          newPoint,
+          isochroneSettings.intervals,
+          isochroneSettings.travelMode,
+          isochroneSettings.mode
+        );
+        addIsochronesToMap(map, isochrones, isochroneSettings.colorScale, isochroneSettings.transparency);
+        setIsochroneSettings(prev => ({ ...prev, isLoading: false }));
+        // Restart heartbeat if enabled
+        if (isochroneSettings.heartbeat) {
+          startHeartbeatAnimation(map, isochroneSettings.colorScale, isochroneSettings.transparency);
+        }
+      }
+    );
+
+    // Generate and display isochrones (async for routed mode)
+    const isochrones = await generateIsochrones(
+      clickedPoint,
+      isochroneSettings.intervals,
+      isochroneSettings.travelMode,
+      isochroneSettings.mode
+    );
+
+    addIsochronesToMap(map, isochrones, isochroneSettings.colorScale, isochroneSettings.transparency);
+    setIsochroneSettings(prev => ({ ...prev, isLoading: false }));
+
+    // Start heartbeat animation if enabled
+    if (isochroneSettings.heartbeat) {
+      startHeartbeatAnimation(map, isochroneSettings.colorScale, isochroneSettings.transparency);
+    }
+  }, [currentStyle, isochroneSettings]);
+
+  // Clear isochrones
+  const handleClearIsochrones = useCallback(() => {
+    const map = mapRef.current?.map;
+    if (map) {
+      stopHeartbeatAnimation(map);
+      removeIsochronesFromMap(map);
+      removeClickMarker(map);
+    }
+    setIsochroneSettings(prev => ({ ...prev, clickedPoint: null, isLoading: false }));
+  }, []);
+
+  // Handle Comparison settings change
+  const handleComparisonChange = useCallback((settings: Partial<ComparisonSettings>) => {
+    setComparisonSettings(prev => {
+      const newSettings = { ...prev, ...settings };
+
+      if (currentStyle === 'comparison' && settings.basemap) {
+        mapRef.current?.setStyle('comparison', {
+          basemap: newSettings.basemap
+        });
+      }
+
+      return newSettings;
+    });
+  }, [currentStyle]);
+
+  // Handle Roads settings change
+  const handleRoadsChange = useCallback((settings: Partial<RoadsSettings>) => {
+    setRoadsSettings(prev => {
+      const newSettings = { ...prev, ...settings };
+
+      if (currentStyle === 'roads') {
+        mapRef.current?.setStyle('roads', {
+          basemap: newSettings.basemap,
+          colorScheme: newSettings.colorScheme
+        });
+      }
+
+      return newSettings;
+    });
+  }, [currentStyle]);
+
+  // Handle Tree Canopy settings change
+  const handleTreeCanopyChange = useCallback((settings: Partial<TreeCanopySettings>) => {
+    setTreeCanopySettings(prev => {
+      const newSettings = { ...prev, ...settings };
+
+      if (currentStyle === 'tree-canopy') {
+        mapRef.current?.setStyle('tree-canopy', {
+          basemap: newSettings.basemap,
+          colorScheme: newSettings.colorScheme
+        });
+      }
+
+      return newSettings;
+    });
+  }, [currentStyle]);
+
+  // Handle Lighthouse settings change
+  const handleLighthouseChange = useCallback((settings: Partial<LighthouseSettings>) => {
+    setLighthouseSettings(prev => {
+      const newSettings = { ...prev, ...settings };
+
+      if (currentStyle === 'lighthouse') {
+        mapRef.current?.setStyle('lighthouse', {
+          basemap: newSettings.basemap,
+          colorScheme: newSettings.colorScheme
+        });
+      }
+
+      return newSettings;
+    });
+  }, [currentStyle]);
+
+  // Handle 3D City settings change
+  const handleCity3dChange = useCallback((settings: Partial<City3DSettings>) => {
+    setCity3dSettings(prev => {
+      const newSettings = { ...prev, ...settings };
+
+      if (currentStyle === '3d-city') {
+        mapRef.current?.setStyle('3d-city', {
+          basemap: newSettings.basemap,
+          colorScheme: newSettings.colorScheme
+        });
+      }
+
+      return newSettings;
+    });
+  }, [currentStyle]);
+
   // Handle export
   const handleExport = useCallback(async (settings: ExportSettings) => {
     const map = mapRef.current?.map;
@@ -349,7 +717,13 @@ export default function Home() {
         nolli: nolliSettings,
         figureGround: figureGroundSettings,
         lulc: lulcSettings,
-        sunpath: sunpathSettings
+        sunpath: sunpathSettings,
+        isochrone: isochroneSettings,
+        comparison: comparisonSettings,
+        roads: roadsSettings,
+        treeCanopy: treeCanopySettings,
+        lighthouse: lighthouseSettings,
+        city3d: city3dSettings
       }
     });
 
@@ -358,7 +732,7 @@ export default function Home() {
     } else {
       alert('Project saved successfully!');
     }
-  }, [user, locationName, currentStyle, cinematicSettings, minimalistSettings, dataSettings, nolliSettings, figureGroundSettings, lulcSettings, sunpathSettings, saveProject]);
+  }, [user, locationName, currentStyle, cinematicSettings, minimalistSettings, dataSettings, nolliSettings, figureGroundSettings, lulcSettings, sunpathSettings, isochroneSettings, comparisonSettings, roadsSettings, treeCanopySettings, lighthouseSettings, city3dSettings, saveProject]);
 
   // Handle load project
   const handleLoadProject = useCallback((project: typeof projects[0]) => {
@@ -375,6 +749,12 @@ export default function Home() {
       if (project.settings.figureGround) setFigureGroundSettings(project.settings.figureGround);
       if (project.settings.lulc) setLulcSettings(project.settings.lulc);
       if (project.settings.sunpath) setSunpathSettings(project.settings.sunpath);
+      if (project.settings.isochrone) setIsochroneSettings(project.settings.isochrone);
+      if (project.settings.comparison) setComparisonSettings(project.settings.comparison);
+      if (project.settings.roads) setRoadsSettings(project.settings.roads);
+      if (project.settings.treeCanopy) setTreeCanopySettings(project.settings.treeCanopy);
+      if (project.settings.lighthouse) setLighthouseSettings(project.settings.lighthouse);
+      if (project.settings.city3d) setCity3dSettings(project.settings.city3d);
     }
 
     setShowSavedProjects(false);
@@ -401,6 +781,35 @@ export default function Home() {
               Beautiful Maps
             </h1>
           </div>
+          {/* Navigation Tabs */}
+          <nav className="hidden md:flex items-center gap-1 bg-neutral-100 rounded-lg p-1 border border-neutral-200">
+            <span
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-gradient-to-r from-blue-500 to-purple-600 rounded-md"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+              </svg>
+              Map Types
+            </span>
+            <Link
+              href="/data-sources"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-neutral-600 hover:bg-neutral-200 rounded-md transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+              </svg>
+              Data Sources
+            </Link>
+            <Link
+              href="/artwork"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-neutral-600 hover:bg-neutral-200 rounded-md transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              Artwork
+            </Link>
+          </nav>
         </div>
 
         <div className="flex-1 max-w-md">
@@ -505,6 +914,16 @@ export default function Home() {
             initialZoom={12}
             initialPitch={60}
             initialBearing={-17.6}
+            onClick={handleMapClick}
+          />
+
+          {/* Comparison Slider */}
+          <ComparisonSlider
+            leftLabel={`${comparisonSettings.leftYear}`}
+            rightLabel={`${comparisonSettings.rightYear}`}
+            position={comparisonSettings.sliderPosition}
+            onPositionChange={(pos) => handleComparisonChange({ sliderPosition: pos })}
+            isVisible={currentStyle === 'comparison'}
           />
 
           {/* Export Frame Overlay */}
@@ -577,11 +996,24 @@ export default function Home() {
               dataSettings={dataSettings}
               sunpathSettings={sunpathSettings}
               lulcSettings={lulcSettings}
+              isochroneSettings={isochroneSettings}
+              comparisonSettings={comparisonSettings}
+              roadsSettings={roadsSettings}
+              treeCanopySettings={treeCanopySettings}
+              lighthouseSettings={lighthouseSettings}
+              city3dSettings={city3dSettings}
               onCinematicChange={handleCinematicChange}
               onMinimalistChange={handleMinimalistChange}
               onDataChange={handleDataChange}
               onSunpathChange={handleSunpathChange}
               onLulcChange={handleLulcChange}
+              onIsochroneChange={handleIsochroneChange}
+              onComparisonChange={handleComparisonChange}
+              onRoadsChange={handleRoadsChange}
+              onTreeCanopyChange={handleTreeCanopyChange}
+              onLighthouseChange={handleLighthouseChange}
+              onCity3dChange={handleCity3dChange}
+              onClearIsochrones={handleClearIsochrones}
             />
 
             {/* Export Panel */}

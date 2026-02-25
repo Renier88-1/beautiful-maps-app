@@ -3,8 +3,12 @@
 import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import maplibregl, { Map as MapLibreMap } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { Protocol } from 'pmtiles';
 import { getMapStyle } from '@/lib/mapStyles';
 import type { MapStyle, Basemap, DataLayer, ColorScheme } from '@/types';
+
+// Register PMTiles protocol globally (only once)
+let pmtilesProtocolRegistered = false;
 
 export interface MapViewRef {
   map: MapLibreMap | null;
@@ -25,6 +29,7 @@ interface MapViewProps {
   initialBearing?: number;
   onLoad?: () => void;
   onMoveEnd?: (center: { lng: number; lat: number }, zoom: number) => void;
+  onClick?: (lng: number, lat: number) => void;
   className?: string;
 }
 
@@ -37,6 +42,7 @@ export const MapView = forwardRef<MapViewRef, MapViewProps>(function MapView(
     initialBearing = -17.6,
     onLoad,
     onMoveEnd,
+    onClick,
     className = ''
   },
   ref
@@ -44,6 +50,19 @@ export const MapView = forwardRef<MapViewRef, MapViewProps>(function MapView(
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+
+  // Use refs to store the latest callbacks so they're always current
+  const onClickRef = useRef(onClick);
+  const onMoveEndRef = useRef(onMoveEnd);
+
+  // Keep refs updated with latest callbacks
+  useEffect(() => {
+    onClickRef.current = onClick;
+  }, [onClick]);
+
+  useEffect(() => {
+    onMoveEndRef.current = onMoveEnd;
+  }, [onMoveEnd]);
 
   useImperativeHandle(ref, () => ({
     map: mapRef.current,
@@ -94,6 +113,13 @@ export const MapView = forwardRef<MapViewRef, MapViewProps>(function MapView(
 
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
+
+    // Register PMTiles protocol for vector tile support (only once)
+    if (!pmtilesProtocolRegistered) {
+      const protocol = new Protocol();
+      maplibregl.addProtocol('pmtiles', protocol.tile);
+      pmtilesProtocolRegistered = true;
+    }
 
     const styleSpec = getMapStyle(initialStyle, { timeOfDay: 12 });
 
@@ -150,7 +176,11 @@ export const MapView = forwardRef<MapViewRef, MapViewProps>(function MapView(
     map.on('moveend', () => {
       const center = map.getCenter();
       const zoom = map.getZoom();
-      onMoveEnd?.({ lng: center.lng, lat: center.lat }, zoom);
+      onMoveEndRef.current?.({ lng: center.lng, lat: center.lat }, zoom);
+    });
+
+    map.on('click', (e) => {
+      onClickRef.current?.(e.lngLat.lng, e.lngLat.lat);
     });
 
     mapRef.current = map;
