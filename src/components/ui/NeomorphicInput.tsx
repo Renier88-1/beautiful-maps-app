@@ -31,16 +31,17 @@ export function NeomorphicInput({
     <div
       className={`
         relative flex items-center
-        bg-neutral-100 rounded-xl
-        shadow-[inset_2px_2px_4px_#d1d1d1,inset_-2px_-2px_4px_#ffffff]
+        bg-[var(--bg-input)] rounded-xl
+        border border-[var(--border-subtle)]
+        neu-shadow-inset-sm
         transition-shadow duration-200
-        focus-within:shadow-[inset_3px_3px_6px_#c1c1c1,inset_-3px_-3px_6px_#ffffff]
+        focus-within:neu-shadow-inset-focus focus-within:border-[var(--accent)]
         ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
         ${className}
       `}
     >
       {icon && (
-        <div className="absolute left-3 text-neutral-400">
+        <div className="absolute left-3 text-[var(--text-muted)]">
           {icon}
         </div>
       )}
@@ -54,8 +55,8 @@ export function NeomorphicInput({
         onBlur={onBlur}
         onKeyDown={onKeyDown}
         className={`
-          w-full py-3 bg-transparent
-          text-neutral-700 placeholder-neutral-400
+          w-full py-2.5 bg-transparent text-sm
+          text-[var(--text-primary)] placeholder-[var(--text-muted)]
           focus:outline-none
           ${icon ? 'pl-10 pr-4' : 'px-4'}
         `}

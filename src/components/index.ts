@@ -10,3 +10,6 @@ export type { MapViewRef } from './MapView';
 export { AuthModal } from './AuthModal';
 export { MapTypeSelector } from './MapTypeSelector';
 export { ComparisonSlider } from './ComparisonSlider';
+export { TextOverlayPanel } from './TextOverlayPanel';
+export { TextOverlayRenderer } from './TextOverlayRenderer';
+export { PresetPanel } from './PresetPanel';

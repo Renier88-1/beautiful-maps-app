@@ -9,143 +9,150 @@ interface MapTypeSelectorProps {
   onReset: () => void;
 }
 
-const mapTypes: { id: MapStyle; name: string; icon: string; description: string }[] = [
+const mapTypes: { id: MapStyle; name: string; icon: string; gradient: string; description: string }[] = [
   {
     id: 'cinematic',
     name: 'Cinematic',
     icon: '🎬',
-    description: 'Dynamic day/night lighting with atmospheric haze and dramatic shadows'
+    gradient: 'linear-gradient(135deg, #f97316, #ec4899, #8b5cf6)',
+    description: 'Dynamic day/night lighting with atmospheric haze'
   },
   {
     id: 'minimalist',
     name: 'Minimalist',
     icon: '◻️',
-    description: 'Clean, neutral canvas ideal for data overlays and focused analysis'
+    gradient: 'linear-gradient(135deg, #e2e8f0, #cbd5e1, #94a3b8)',
+    description: 'Clean, neutral canvas ideal for data overlays'
   },
   {
     id: 'data',
     name: 'Data Viz',
     icon: '📊',
-    description: '3D terrain visualization with customizable color schemes for data storytelling'
+    gradient: 'linear-gradient(135deg, #06b6d4, #3b82f6, #6366f1)',
+    description: '3D terrain with customizable color schemes'
   },
   {
     id: 'nolli',
     name: 'Nolli',
     icon: '🏛️',
-    description: 'Urban form analysis showing public vs private space in high contrast'
+    gradient: 'linear-gradient(135deg, #f5f5f5, #d4d4d4, #404040)',
+    description: 'Urban form - public vs private space'
   },
   {
     id: 'figure-ground',
     name: 'Figure Ground',
     icon: '⬛',
-    description: 'Architectural diagram emphasizing built mass against open space'
+    gradient: 'linear-gradient(135deg, #18181b, #3f3f46, #fafafa)',
+    description: 'Built mass against open space'
   },
   {
     id: 'lulc',
     name: 'LULC',
     icon: '🌿',
-    description: 'Land use and land cover visualization showing vegetation, urban, and water areas'
+    gradient: 'linear-gradient(135deg, #166534, #22c55e, #86efac)',
+    description: 'Land use and land cover visualization'
   },
   {
     id: 'sunpath',
     name: 'Sun Path',
     icon: '☀️',
-    description: 'Solar analysis showing shadow patterns throughout the day with animated playback'
+    gradient: 'linear-gradient(135deg, #fbbf24, #f59e0b, #d97706)',
+    description: 'Solar analysis with animated shadows'
   },
   {
     id: 'isochrone',
     name: 'Isochrone',
     icon: '⏱️',
-    description: 'Click to generate travel time zones showing walkable, bikeable, or drivable distances'
+    gradient: 'linear-gradient(135deg, #14b8a6, #06b6d4, #0284c7)',
+    description: 'Travel time zone visualization'
   },
   {
     id: 'comparison',
     name: 'Compare',
     icon: '↔️',
-    description: 'Swipe slider to visually compare different time periods side by side'
+    gradient: 'linear-gradient(135deg, #6366f1, #8b5cf6, #a78bfa)',
+    description: 'Swipe slider to compare time periods'
   },
   {
     id: 'roads',
     name: 'Roads',
     icon: '🛣️',
-    description: 'Road network density and connectivity analysis with traffic flow visualization'
+    gradient: 'linear-gradient(135deg, #475569, #64748b, #94a3b8)',
+    description: 'Road network density analysis'
   },
   {
     id: 'tree-canopy',
     name: 'Tree Canopy',
     icon: '🌳',
-    description: 'Urban forest density visualization with hexagonal binning and canopy coverage'
+    gradient: 'linear-gradient(135deg, #065f46, #059669, #34d399)',
+    description: 'Urban forest density visualization'
   },
   {
     id: 'lighthouse',
     name: 'Lighthouse',
     icon: '🗼',
-    description: 'Dramatic coastal visualization with animated lighthouse beams and atmospheric fog'
+    gradient: 'linear-gradient(135deg, #1e3a5f, #0ea5e9, #38bdf8)',
+    description: 'Dramatic coastal with animated beams'
   },
   {
     id: '3d-city',
     name: '3D City',
     icon: '🏙️',
-    description: 'Stylized 3D city rendering inspired by Milos Makes Maps with extruded buildings'
+    gradient: 'linear-gradient(135deg, #312e81, #6366f1, #c084fc)',
+    description: 'Stylized 3D city with extruded buildings'
   }
 ];
 
 export function MapTypeSelector({ currentStyle, onStyleChange, onReset }: MapTypeSelectorProps) {
-  const currentType = mapTypes.find(t => t.id === currentStyle);
-
   return (
-    <div className="bg-[#e8ecef] border-b border-neutral-200/50">
-      {/* Map type buttons row */}
-      <div className="px-4 py-2 flex items-center gap-2">
-        <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mr-1 hidden sm:block">
-          Type
-        </span>
-
-        <div className="flex-1 flex items-center gap-1 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-neutral-300">
-          {mapTypes.map((type) => (
-            <button
-              key={type.id}
-              onClick={() => onStyleChange(type.id)}
-              className={`
-                flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium
-                whitespace-nowrap transition-all duration-200
-                ${currentStyle === type.id
-                  ? 'bg-blue-500 text-white shadow-md scale-105'
-                  : 'bg-white/60 text-neutral-600 hover:bg-white hover:shadow-sm'
-                }
-              `}
-              title={type.description}
-            >
-              <span className="text-base">{type.icon}</span>
-              <span className="hidden sm:inline">{type.name}</span>
-            </button>
-          ))}
+    <div className="map-type-bar bg-[var(--bg-primary)] border-b border-[var(--border-subtle)]">
+      <div className="px-3 py-2 flex items-center gap-2">
+        <div className="flex-1 flex items-center gap-1.5 overflow-x-auto pb-0.5">
+          {mapTypes.map((type) => {
+            const isActive = currentStyle === type.id;
+            return (
+              <button
+                key={type.id}
+                onClick={() => onStyleChange(type.id)}
+                className={`
+                  group relative flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium
+                  whitespace-nowrap transition-all duration-200
+                  ${isActive
+                    ? 'text-white scale-[1.02]'
+                    : 'bg-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)]'
+                  }
+                `}
+                style={isActive ? { background: type.gradient } : undefined}
+                title={type.description}
+              >
+                {/* Mini gradient preview dot */}
+                {!isActive && (
+                  <span
+                    className="w-3 h-3 rounded-full flex-shrink-0 border border-[var(--border-subtle)]"
+                    style={{ background: type.gradient }}
+                  />
+                )}
+                <span className="hidden sm:inline">{type.name}</span>
+                <span className="sm:hidden text-sm">{type.icon}</span>
+              </button>
+            );
+          })}
         </div>
 
         <button
           onClick={onReset}
-          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-sm font-medium
-            bg-neutral-200/60 text-neutral-600 hover:bg-neutral-300/60
+          className="flex items-center gap-1 px-2.5 py-2 rounded-xl text-xs font-medium
+            bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-primary)]
+            border border-[var(--border-subtle)]
             transition-all duration-200 whitespace-nowrap"
           title="Reset to default view"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
               d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
-          <span className="hidden sm:inline">Reset</span>
         </button>
       </div>
-
-      {/* Description row */}
-      {currentType && (
-        <div className="px-4 pb-2">
-          <p className="text-xs italic text-neutral-500 leading-relaxed">
-            <span className="font-semibold text-neutral-600 not-italic">{currentType.name}:</span>{' '}
-            {currentType.description}
-          </p>
-        </div>
-      )}
     </div>
   );
 }

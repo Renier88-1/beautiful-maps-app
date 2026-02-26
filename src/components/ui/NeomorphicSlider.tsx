@@ -26,7 +26,6 @@ export function NeomorphicSlider({
   className = ''
 }: NeomorphicSliderProps) {
   const percentage = ((value - min) / (max - min)) * 100;
-
   const displayValue = formatValue ? formatValue(value) : value.toString();
 
   return (
@@ -34,27 +33,21 @@ export function NeomorphicSlider({
       {(label || showValue) && (
         <div className="flex justify-between items-center mb-2">
           {label && (
-            <label className="text-sm font-medium text-neutral-600">
+            <label className="text-sm font-medium text-[var(--text-secondary)]">
               {label}
             </label>
           )}
           {showValue && (
-            <span className="text-sm font-mono text-neutral-500">
+            <span className="text-xs font-mono text-[var(--text-muted)] bg-[var(--bg-input)] px-2 py-0.5 rounded-md">
               {displayValue}
             </span>
           )}
         </div>
       )}
       <div className="relative h-8 flex items-center">
-        <div
-          className="
-            absolute w-full h-2 rounded-full
-            bg-neutral-100
-            shadow-[inset_2px_2px_4px_#d1d1d1,inset_-2px_-2px_4px_#ffffff]
-          "
-        >
+        <div className="absolute w-full h-1.5 rounded-full bg-[var(--bg-input)] neu-shadow-inset-sm">
           <div
-            className="absolute h-full rounded-full bg-gradient-to-r from-blue-400 to-blue-500"
+            className="absolute h-full rounded-full bg-gradient-to-r from-[var(--accent)] to-[var(--accent-light)]"
             style={{ width: `${percentage}%` }}
           />
         </div>
@@ -65,21 +58,11 @@ export function NeomorphicSlider({
           step={step}
           value={value}
           onChange={(e) => onChange(parseFloat(e.target.value))}
-          className="
-            absolute w-full h-2 opacity-0 cursor-pointer z-10
-          "
+          className="absolute w-full h-2 opacity-0 cursor-pointer z-10"
         />
         <div
-          className="
-            absolute w-5 h-5 rounded-full
-            bg-white
-            shadow-[2px_2px_4px_#d1d1d1,-2px_-2px_4px_#ffffff]
-            border-2 border-blue-500
-            pointer-events-none
-            transition-transform duration-100
-            hover:scale-110
-          "
-          style={{ left: `calc(${percentage}% - 10px)` }}
+          className="absolute w-4 h-4 rounded-full bg-[var(--bg-elevated)] border-2 border-[var(--accent)] neu-shadow-raised-hover pointer-events-none transition-transform duration-100 hover:scale-110"
+          style={{ left: `calc(${percentage}% - 8px)` }}
         />
       </div>
     </div>

@@ -96,8 +96,8 @@ function DataLayerControls({
   onColorSchemeChange: (scheme: ColorScheme) => void;
 }) {
   return (
-    <div className="space-y-3 pt-2 border-t border-neutral-200">
-      <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+    <div className="space-y-3 pt-2 border-t border-[var(--border-subtle)]">
+      <h4 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">
         Data Overlay
       </h4>
 
@@ -111,11 +111,11 @@ function DataLayerControls({
       {dataLayer !== 'none' && (
         <>
           {dataLayerInfo[dataLayer] && (
-            <div className="p-2 bg-blue-50 rounded-lg border border-blue-100">
-              <p className="text-xs font-medium text-blue-700">
+            <div className="p-2 rounded-lg border" style={{ background: 'var(--info-bg)', borderColor: 'var(--info-border)' }}>
+              <p className="text-xs font-medium text-[var(--info-text)]">
                 {dataLayerInfo[dataLayer].source}
               </p>
-              <p className="text-xs text-blue-600 mt-0.5">
+              <p className="text-xs text-[var(--info-text)] mt-0.5">
                 {dataLayerInfo[dataLayer].description}
               </p>
             </div>
@@ -129,7 +129,7 @@ function DataLayerControls({
           />
 
           <div>
-            <div className="text-xs text-neutral-500 mb-1">Color Preview</div>
+            <div className="text-xs text-[var(--text-muted)] mb-1">Color Preview</div>
             <div
               className="h-3 rounded-lg overflow-hidden"
               style={{ background: colorGradients[colorScheme] }}
@@ -299,8 +299,8 @@ export function StylePanel({
   };
 
   return (
-    <NeomorphicCard variant="raised" padding="md" className="space-y-4">
-      <h3 className="text-sm font-semibold text-neutral-600 uppercase tracking-wider">
+    <div className="space-y-4">
+      <h3 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">
         Style Settings
       </h3>
 
@@ -338,12 +338,12 @@ export function StylePanel({
                   p-2 rounded-lg text-center transition-all duration-200
                   ${cinematicSettings.timeOfDay === preset.time
                     ? 'bg-blue-100 shadow-inner'
-                    : 'bg-neutral-50 hover:bg-neutral-100'
+                    : 'bg-[var(--bg-input)] hover:bg-[var(--bg-selected)]'
                   }
                 `}
               >
                 <div className="text-lg">{preset.emoji}</div>
-                <div className="text-xs text-neutral-600">{preset.label}</div>
+                <div className="text-xs text-[var(--text-secondary)]">{preset.label}</div>
               </button>
             ))}
           </div>
@@ -401,11 +401,11 @@ export function StylePanel({
 
           {/* Data source info */}
           {dataSettings.dataLayer !== 'none' && dataLayerInfo[dataSettings.dataLayer] && (
-            <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
-              <p className="text-xs font-medium text-blue-700">
+            <div className="p-3 rounded-lg border" style={{ background: 'var(--info-bg)', borderColor: 'var(--info-border)' }}>
+              <p className="text-xs font-medium text-[var(--info-text)]">
                 Source: {dataLayerInfo[dataSettings.dataLayer].source}
               </p>
-              <p className="text-xs text-blue-600 mt-1">
+              <p className="text-xs text-[var(--info-text)] mt-1">
                 {dataLayerInfo[dataSettings.dataLayer].description}
               </p>
             </div>
@@ -430,7 +430,7 @@ export function StylePanel({
 
           {/* Color scheme preview */}
           <div className="pt-2">
-            <div className="text-xs text-neutral-500 mb-2">Color Preview</div>
+            <div className="text-xs text-[var(--text-muted)] mb-2">Color Preview</div>
             <div
               className="h-4 rounded-lg overflow-hidden"
               style={{ background: colorGradients[dataSettings.colorScheme] }}
@@ -473,12 +473,12 @@ export function StylePanel({
                   p-2 rounded-lg text-center transition-all duration-200
                   ${Math.abs(sunpathSettings.time - preset.time) < 1
                     ? 'bg-amber-100 shadow-inner'
-                    : 'bg-neutral-50 hover:bg-neutral-100'
+                    : 'bg-[var(--bg-input)] hover:bg-[var(--bg-selected)]'
                   }
                 `}
               >
                 <div className="text-lg">{preset.emoji}</div>
-                <div className="text-xs text-neutral-600">{preset.label}</div>
+                <div className="text-xs text-[var(--text-secondary)]">{preset.label}</div>
               </button>
             ))}
           </div>
@@ -509,13 +509,13 @@ export function StylePanel({
             </NeomorphicButton>
           </div>
 
-          <div className="pt-2 border-t border-neutral-200">
-            <label className="block text-xs text-neutral-500 mb-1">Date</label>
+          <div className="pt-2 border-t border-[var(--border-subtle)]">
+            <label className="block text-xs text-[var(--text-muted)] mb-1">Date</label>
             <input
               type="date"
               value={sunpathSettings.date}
               onChange={(e) => onSunpathChange({ date: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg border border-neutral-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+              className="w-full px-3 py-2 rounded-lg border border-[var(--border-subtle)] text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
             />
           </div>
 
@@ -558,8 +558,8 @@ export function StylePanel({
           />
 
           {/* LULC Legend */}
-          <div className="pt-2 border-t border-neutral-200">
-            <div className="text-xs font-semibold text-neutral-600 mb-2">Legend</div>
+          <div className="pt-2 border-t border-[var(--border-subtle)]">
+            <div className="text-xs font-semibold text-[var(--text-secondary)] mb-2">Legend</div>
             <div className="space-y-1.5">
               {[
                 { color: '#1a5c1a', label: 'Forest / Vegetation' },
@@ -573,7 +573,7 @@ export function StylePanel({
                     className="w-4 h-4 rounded-sm border border-neutral-300"
                     style={{ backgroundColor: item.color }}
                   />
-                  <span className="text-xs text-neutral-600">{item.label}</span>
+                  <span className="text-xs text-[var(--text-secondary)]">{item.label}</span>
                 </div>
               ))}
             </div>
@@ -586,10 +586,10 @@ export function StylePanel({
         <div className="space-y-4">
           <div className={`p-3 rounded-lg border ${
             currentStyle === 'nolli'
-              ? 'bg-neutral-50 border-neutral-200'
+              ? 'bg-[var(--bg-input)] border-[var(--border-subtle)]'
               : 'bg-neutral-800 border-neutral-700'
           }`}>
-            <p className={`text-xs ${currentStyle === 'nolli' ? 'text-neutral-700' : 'text-neutral-300'}`}>
+            <p className={`text-xs ${currentStyle === 'nolli' ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>
               {currentStyle === 'nolli'
                 ? 'Nolli map style shows urban form with emphasis on public vs private space. Building footprints require vector tile data.'
                 : 'Figure-ground diagram emphasizes built mass against open space. Currently showing terrain-based approximation.'
@@ -660,7 +660,7 @@ export function StylePanel({
             formatValue={(v) => `${v} min`}
           />
 
-          <div className="text-xs text-neutral-500">
+          <div className="text-xs text-[var(--text-muted)]">
             Intervals: {isochroneSettings.intervals.map(i => `${i}min`).join(', ')}
           </div>
 
@@ -691,17 +691,17 @@ export function StylePanel({
           )}
 
           {/* Draggable and Heartbeat toggles */}
-          <div className="pt-2 border-t border-neutral-200 space-y-2">
+          <div className="pt-2 border-t border-[var(--border-subtle)] space-y-2">
             <div className="flex items-center justify-between py-2">
               <div>
-                <span className="text-sm text-neutral-600">Draggable Marker</span>
-                <p className="text-xs text-neutral-400">Drag to update isochrones</p>
+                <span className="text-sm text-[var(--text-secondary)]">Draggable Marker</span>
+                <p className="text-xs text-[var(--text-muted)]">Drag to update isochrones</p>
               </div>
               <button
                 onClick={() => onIsochroneChange({ draggable: !isochroneSettings.draggable })}
                 className={`
                   relative w-12 h-6 rounded-full transition-colors duration-200
-                  ${isochroneSettings.draggable ? 'bg-teal-500' : 'bg-neutral-300'}
+                  ${isochroneSettings.draggable ? 'bg-teal-500' : 'bg-[var(--bg-input)]'}
                 `}
               >
                 <div className={`
@@ -713,14 +713,14 @@ export function StylePanel({
 
             <div className="flex items-center justify-between py-2">
               <div>
-                <span className="text-sm text-neutral-600">Heartbeat Animation</span>
-                <p className="text-xs text-neutral-400">Pulsing color effect</p>
+                <span className="text-sm text-[var(--text-secondary)]">Heartbeat Animation</span>
+                <p className="text-xs text-[var(--text-muted)]">Pulsing color effect</p>
               </div>
               <button
                 onClick={() => onIsochroneChange({ heartbeat: !isochroneSettings.heartbeat })}
                 className={`
                   relative w-12 h-6 rounded-full transition-colors duration-200
-                  ${isochroneSettings.heartbeat ? 'bg-pink-500' : 'bg-neutral-300'}
+                  ${isochroneSettings.heartbeat ? 'bg-pink-500' : 'bg-[var(--bg-input)]'}
                 `}
               >
                 <div className={`
@@ -732,8 +732,8 @@ export function StylePanel({
           </div>
 
           {isochroneSettings.clickedPoint && !isochroneSettings.isLoading && (
-            <div className="pt-2 border-t border-neutral-200 space-y-2">
-              <div className="text-xs text-neutral-600">
+            <div className="pt-2 border-t border-[var(--border-subtle)] space-y-2">
+              <div className="text-xs text-[var(--text-secondary)]">
                 Origin: {isochroneSettings.clickedPoint.lat.toFixed(4)}, {isochroneSettings.clickedPoint.lng.toFixed(4)}
               </div>
               <NeomorphicButton
@@ -749,7 +749,7 @@ export function StylePanel({
 
           {!isochroneSettings.clickedPoint && !isochroneSettings.isLoading && (
             <div className="p-2 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-xs text-blue-700 text-center">
+              <p className="text-xs text-[var(--info-text)] text-center">
                 Click on the map to set origin point
               </p>
             </div>
@@ -775,11 +775,11 @@ export function StylePanel({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-neutral-500 mb-1">Left Year</label>
+              <label className="block text-xs text-[var(--text-muted)] mb-1">Left Year</label>
               <select
                 value={comparisonSettings.leftYear}
                 onChange={(e) => onComparisonChange({ leftYear: parseInt(e.target.value) })}
-                className="w-full px-3 py-2 rounded-lg border border-neutral-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--border-subtle)] text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
               >
                 {yearOptions.map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -787,11 +787,11 @@ export function StylePanel({
               </select>
             </div>
             <div>
-              <label className="block text-xs text-neutral-500 mb-1">Right Year</label>
+              <label className="block text-xs text-[var(--text-muted)] mb-1">Right Year</label>
               <select
                 value={comparisonSettings.rightYear}
                 onChange={(e) => onComparisonChange({ rightYear: parseInt(e.target.value) })}
-                className="w-full px-3 py-2 rounded-lg border border-neutral-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--border-subtle)] text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
               >
                 {yearOptions.map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -870,7 +870,7 @@ export function StylePanel({
 
           {/* Color preview */}
           <div>
-            <div className="text-xs text-neutral-500 mb-1">Color Preview</div>
+            <div className="text-xs text-[var(--text-muted)] mb-1">Color Preview</div>
             <div
               className="h-3 rounded-lg overflow-hidden"
               style={{ background: colorGradients[roadsSettings.colorScheme] }}
@@ -946,12 +946,12 @@ export function StylePanel({
           />
 
           <div className="flex items-center justify-between py-2">
-            <span className="text-sm text-neutral-600">3D Extrusion</span>
+            <span className="text-sm text-[var(--text-secondary)]">3D Extrusion</span>
             <button
               onClick={() => onTreeCanopyChange({ show3D: !treeCanopySettings.show3D })}
               className={`
                 relative w-12 h-6 rounded-full transition-colors duration-200
-                ${treeCanopySettings.show3D ? 'bg-emerald-500' : 'bg-neutral-300'}
+                ${treeCanopySettings.show3D ? 'bg-emerald-500' : 'bg-[var(--bg-input)]'}
               `}
             >
               <div className={`
@@ -962,12 +962,12 @@ export function StylePanel({
           </div>
 
           {/* Canopy Legend */}
-          <div className="pt-2 border-t border-neutral-200">
-            <div className="text-xs font-semibold text-neutral-600 mb-2">Density Scale</div>
+          <div className="pt-2 border-t border-[var(--border-subtle)]">
+            <div className="text-xs font-semibold text-[var(--text-secondary)] mb-2">Density Scale</div>
             <div className="flex items-center gap-2">
               <div className="flex-1 h-3 rounded-lg" style={{ background: 'linear-gradient(to right, #d4e8d4, #2d8a2d, #0a5c0a)' }} />
             </div>
-            <div className="flex justify-between text-xs text-neutral-500 mt-1">
+            <div className="flex justify-between text-xs text-[var(--text-muted)] mt-1">
               <span>Low</span>
               <span>High</span>
             </div>
@@ -1022,12 +1022,12 @@ export function StylePanel({
           />
 
           <div className="flex items-center justify-between py-2">
-            <span className="text-sm text-neutral-600">Night Mode</span>
+            <span className="text-sm text-[var(--text-secondary)]">Night Mode</span>
             <button
               onClick={() => onLighthouseChange({ nightMode: !lighthouseSettings.nightMode })}
               className={`
                 relative w-12 h-6 rounded-full transition-colors duration-200
-                ${lighthouseSettings.nightMode ? 'bg-indigo-600' : 'bg-neutral-300'}
+                ${lighthouseSettings.nightMode ? 'bg-indigo-600' : 'bg-[var(--bg-input)]'}
               `}
             >
               <div className={`
@@ -1038,12 +1038,12 @@ export function StylePanel({
           </div>
 
           <div className="flex items-center justify-between py-2">
-            <span className="text-sm text-neutral-600">Animate Beam</span>
+            <span className="text-sm text-[var(--text-secondary)]">Animate Beam</span>
             <button
               onClick={() => onLighthouseChange({ animateBeam: !lighthouseSettings.animateBeam })}
               className={`
                 relative w-12 h-6 rounded-full transition-colors duration-200
-                ${lighthouseSettings.animateBeam ? 'bg-sky-500' : 'bg-neutral-300'}
+                ${lighthouseSettings.animateBeam ? 'bg-sky-500' : 'bg-[var(--bg-input)]'}
               `}
             >
               <div className={`
@@ -1109,12 +1109,12 @@ export function StylePanel({
           />
 
           <div className="flex items-center justify-between py-2">
-            <span className="text-sm text-neutral-600">Show Roofs</span>
+            <span className="text-sm text-[var(--text-secondary)]">Show Roofs</span>
             <button
               onClick={() => onCity3dChange({ showRoofs: !city3dSettings.showRoofs })}
               className={`
                 relative w-12 h-6 rounded-full transition-colors duration-200
-                ${city3dSettings.showRoofs ? 'bg-violet-500' : 'bg-neutral-300'}
+                ${city3dSettings.showRoofs ? 'bg-violet-500' : 'bg-[var(--bg-input)]'}
               `}
             >
               <div className={`
@@ -1125,12 +1125,12 @@ export function StylePanel({
           </div>
 
           <div className="flex items-center justify-between py-2">
-            <span className="text-sm text-neutral-600">Ambient Occlusion</span>
+            <span className="text-sm text-[var(--text-secondary)]">Ambient Occlusion</span>
             <button
               onClick={() => onCity3dChange({ ambientOcclusion: !city3dSettings.ambientOcclusion })}
               className={`
                 relative w-12 h-6 rounded-full transition-colors duration-200
-                ${city3dSettings.ambientOcclusion ? 'bg-violet-500' : 'bg-neutral-300'}
+                ${city3dSettings.ambientOcclusion ? 'bg-violet-500' : 'bg-[var(--bg-input)]'}
               `}
             >
               <div className={`
@@ -1141,12 +1141,12 @@ export function StylePanel({
           </div>
 
           <div className="flex items-center justify-between py-2">
-            <span className="text-sm text-neutral-600">Camera Orbit</span>
+            <span className="text-sm text-[var(--text-secondary)]">Camera Orbit</span>
             <button
               onClick={() => onCity3dChange({ cameraOrbit: !city3dSettings.cameraOrbit })}
               className={`
                 relative w-12 h-6 rounded-full transition-colors duration-200
-                ${city3dSettings.cameraOrbit ? 'bg-violet-500' : 'bg-neutral-300'}
+                ${city3dSettings.cameraOrbit ? 'bg-violet-500' : 'bg-[var(--bg-input)]'}
               `}
             >
               <div className={`
@@ -1164,8 +1164,8 @@ export function StylePanel({
           />
 
           {/* Style previews */}
-          <div className="pt-2 border-t border-neutral-200">
-            <div className="text-xs font-semibold text-neutral-600 mb-2">Style Preview</div>
+          <div className="pt-2 border-t border-[var(--border-subtle)]">
+            <div className="text-xs font-semibold text-[var(--text-secondary)] mb-2">Style Preview</div>
             <div className="grid grid-cols-4 gap-2">
               {[
                 { style: 'realistic', bg: 'linear-gradient(135deg, #4a5568, #718096)', label: 'Real' },
@@ -1192,6 +1192,6 @@ export function StylePanel({
           </div>
         </div>
       )}
-    </NeomorphicCard>
+    </div>
   );
 }

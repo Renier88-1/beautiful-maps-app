@@ -35,24 +35,24 @@ export function NeomorphicToggle({
         />
         <div
           className={`
-            w-12 h-6 rounded-full transition-all duration-200
-            shadow-[inset_2px_2px_4px_#d1d1d1,inset_-2px_-2px_4px_#ffffff]
-            ${checked ? 'bg-blue-500' : 'bg-neutral-200'}
+            w-11 h-6 rounded-full transition-all duration-200
+            neu-shadow-inset-sm
+            ${checked ? 'bg-[var(--accent)]' : 'bg-[var(--bg-input)]'}
           `}
         >
           <div
             className={`
               absolute top-0.5 w-5 h-5 rounded-full
-              bg-white
-              shadow-[2px_2px_4px_rgba(0,0,0,0.1)]
+              bg-[var(--bg-elevated)]
+              shadow-sm
               transition-all duration-200
-              ${checked ? 'left-[26px]' : 'left-0.5'}
+              ${checked ? 'left-[22px]' : 'left-0.5'}
             `}
           />
         </div>
       </div>
       {label && (
-        <span className="ml-3 text-sm font-medium text-neutral-700">
+        <span className="ml-3 text-sm font-medium text-[var(--text-secondary)]">
           {label}
         </span>
       )}

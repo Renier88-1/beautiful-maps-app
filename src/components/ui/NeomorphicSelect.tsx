@@ -38,7 +38,6 @@ export function NeomorphicSelect({
         setIsOpen(false);
       }
     }
-
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
@@ -46,7 +45,7 @@ export function NeomorphicSelect({
   return (
     <div className={`relative ${className}`} ref={containerRef}>
       {label && (
-        <label className="block text-sm font-medium text-neutral-600 mb-2">
+        <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
           {label}
         </label>
       )}
@@ -56,59 +55,44 @@ export function NeomorphicSelect({
         disabled={disabled}
         className={`
           w-full flex items-center justify-between
-          px-4 py-3 rounded-xl
-          bg-neutral-100 text-left
-          shadow-[4px_4px_8px_#d1d1d1,-4px_-4px_8px_#ffffff]
+          px-3 py-2.5 rounded-xl text-sm
+          bg-[var(--bg-card)] text-left
+          border border-[var(--border-subtle)]
+          neu-shadow-raised-sm
           transition-all duration-200
-          ${isOpen ? 'shadow-[inset_2px_2px_4px_#d1d1d1,inset_-2px_-2px_4px_#ffffff]' : ''}
+          ${isOpen ? 'neu-shadow-inset-sm' : ''}
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
         `}
       >
-        <span className={selectedOption ? 'text-neutral-700' : 'text-neutral-400'}>
-          {selectedOption?.icon && (
-            <span className="mr-2">{selectedOption.icon}</span>
-          )}
+        <span className={selectedOption ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}>
+          {selectedOption?.icon && <span className="mr-2">{selectedOption.icon}</span>}
           {selectedOption?.label || placeholder}
         </span>
         <svg
-          className={`w-5 h-5 text-neutral-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+          className={`w-4 h-4 text-[var(--text-muted)] transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+          fill="none" stroke="currentColor" viewBox="0 0 24 24"
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
 
       {isOpen && (
-        <div
-          className="
-            absolute z-50 w-full mt-2
-            bg-neutral-100 rounded-xl
-            shadow-[6px_6px_12px_#d1d1d1,-6px_-6px_12px_#ffffff]
-            overflow-hidden
-          "
-        >
+        <div className="absolute z-50 w-full mt-2 bg-[var(--bg-card)] rounded-xl neu-shadow-raised border border-[var(--border-subtle)] overflow-hidden animate-fadeIn max-h-64 overflow-y-auto">
           {options.map((option) => (
             <button
               key={option.value}
               type="button"
-              onClick={() => {
-                onChange(option.value);
-                setIsOpen(false);
-              }}
+              onClick={() => { onChange(option.value); setIsOpen(false); }}
               className={`
-                w-full flex items-center px-4 py-3 text-left
+                w-full flex items-center px-3 py-2.5 text-left text-sm
                 transition-colors duration-150
                 ${option.value === value
-                  ? 'bg-blue-50 text-blue-600'
-                  : 'text-neutral-700 hover:bg-neutral-50'
+                  ? 'bg-[var(--accent-surface)] text-[var(--accent)]'
+                  : 'text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 }
               `}
             >
-              {option.icon && (
-                <span className="mr-2">{option.icon}</span>
-              )}
+              {option.icon && <span className="mr-2">{option.icon}</span>}
               {option.label}
             </button>
           ))}

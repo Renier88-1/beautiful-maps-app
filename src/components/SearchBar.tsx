@@ -21,7 +21,6 @@ export function SearchBar({ onLocationSelect }: SearchBarProps) {
   const [showResults, setShowResults] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Debounced search
   useEffect(() => {
     if (query.length < 3) {
       setResults([]);
@@ -31,14 +30,9 @@ export function SearchBar({ onLocationSelect }: SearchBarProps) {
     const timer = setTimeout(async () => {
       setIsLoading(true);
       try {
-        // Using Nominatim (OpenStreetMap) for free geocoding
         const response = await fetch(
           `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`,
-          {
-            headers: {
-              'User-Agent': 'BeautifulMaps/1.0'
-            }
-          }
+          { headers: { 'User-Agent': 'BeautifulMaps/1.0' } }
         );
         const data = await response.json();
 
@@ -66,14 +60,12 @@ export function SearchBar({ onLocationSelect }: SearchBarProps) {
     return () => clearTimeout(timer);
   }, [query]);
 
-  // Close results when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setShowResults(false);
       }
     }
-
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
@@ -85,18 +77,8 @@ export function SearchBar({ onLocationSelect }: SearchBarProps) {
   };
 
   const SearchIcon = (
-    <svg
-      className="w-5 h-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-      />
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
     </svg>
   );
 
@@ -112,49 +94,26 @@ export function SearchBar({ onLocationSelect }: SearchBarProps) {
       />
 
       {showResults && results.length > 0 && (
-        <div
-          className="
-            absolute z-50 w-full mt-2
-            bg-neutral-100 rounded-xl
-            shadow-[6px_6px_12px_#d1d1d1,-6px_-6px_12px_#ffffff]
-            overflow-hidden max-h-64 overflow-y-auto
-          "
-        >
+        <div className="absolute z-50 w-full mt-2 bg-[var(--bg-card)] rounded-xl neu-shadow-raised border border-[var(--border-subtle)] overflow-hidden max-h-64 overflow-y-auto animate-fadeIn">
           {isLoading && (
-            <div className="px-4 py-3 text-neutral-500 text-sm">
-              Searching...
-            </div>
+            <div className="px-4 py-3 text-[var(--text-muted)] text-sm">Searching...</div>
           )}
           {results.map((result, index) => (
             <button
               key={index}
               type="button"
               onClick={() => handleSelect(result)}
-              className="
-                w-full px-4 py-3 text-left
-                text-neutral-700 hover:bg-neutral-50
-                transition-colors duration-150
-                border-b border-neutral-200 last:border-b-0
-              "
+              className="w-full px-4 py-3 text-left text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-colors duration-150 border-b border-[var(--border-subtle)] last:border-b-0"
             >
               <div className="font-medium text-sm">{result.name}</div>
-              <div className="text-xs text-neutral-500 truncate">
-                {result.displayName}
-              </div>
+              <div className="text-xs text-[var(--text-muted)] truncate">{result.displayName}</div>
             </button>
           ))}
         </div>
       )}
 
       {showResults && query.length >= 3 && results.length === 0 && !isLoading && (
-        <div
-          className="
-            absolute z-50 w-full mt-2
-            bg-neutral-100 rounded-xl
-            shadow-[6px_6px_12px_#d1d1d1,-6px_-6px_12px_#ffffff]
-            px-4 py-3 text-neutral-500 text-sm
-          "
-        >
+        <div className="absolute z-50 w-full mt-2 bg-[var(--bg-card)] rounded-xl neu-shadow-raised border border-[var(--border-subtle)] px-4 py-3 text-[var(--text-muted)] text-sm">
           No results found
         </div>
       )}

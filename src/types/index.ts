@@ -49,17 +49,17 @@ export type IsochroneMode = 'circles' | 'routed';
 
 export interface IsochroneSettings {
   basemap: Basemap;
-  mode: IsochroneMode; // circles = concentric, routed = road network
+  mode: IsochroneMode;
   travelMode: TravelMode;
-  intervals: number[]; // Array of minutes e.g. [5, 10, 15, 20]
-  maxTime: number; // Maximum travel time in minutes
+  intervals: number[];
+  maxTime: number;
   colorScale: IsochroneColorScale;
   transparency: number;
   showLabels: boolean;
   clickedPoint: { lng: number; lat: number } | null;
-  isLoading?: boolean; // For routed mode API calls
-  draggable: boolean; // Allow dragging the centroid marker
-  heartbeat: boolean; // Enable pulsing color animation from centroid outward
+  isLoading?: boolean;
+  draggable: boolean;
+  heartbeat: boolean;
 }
 
 export type ComparisonDataset = 'satellite' | 'terrain' | 'street';
@@ -69,7 +69,7 @@ export interface ComparisonSettings {
   dataset: ComparisonDataset;
   leftYear: number;
   rightYear: number;
-  sliderPosition: number; // 0-100 percentage
+  sliderPosition: number;
 }
 
 export type RoadType = 'all' | 'highways' | 'arterial' | 'local';
@@ -90,7 +90,7 @@ export type TreeCanopyColorMode = 'density' | 'height' | 'coverage';
 export interface TreeCanopySettings {
   basemap: Basemap;
   colorMode: TreeCanopyColorMode;
-  hexagonSize: number; // in meters
+  hexagonSize: number;
   minHeight: number;
   maxHeight: number;
   colorScheme: ColorScheme;
@@ -104,7 +104,7 @@ export interface LighthouseSettings {
   basemap: Basemap;
   beamStyle: LighthouseBeamStyle;
   beamIntensity: number;
-  beamRotation: number; // 0-360 degrees
+  beamRotation: number;
   animateBeam: boolean;
   nightMode: boolean;
   fogDensity: number;
@@ -116,9 +116,9 @@ export type CityRenderStyle = 'realistic' | 'stylized' | 'blueprint' | 'neon';
 export interface City3DSettings {
   basemap: Basemap;
   renderStyle: CityRenderStyle;
-  buildingHeight: number; // exaggeration multiplier
+  buildingHeight: number;
   showRoofs: boolean;
-  lightingAngle: number; // sun angle 0-360
+  lightingAngle: number;
   ambientOcclusion: boolean;
   colorScheme: ColorScheme;
   transparency: number;
@@ -145,7 +145,7 @@ export type DataLayer = 'population' | 'elevation' | 'landcover' | 'none';
 export type ColorScheme = 'heat' | 'cool' | 'viridis' | 'plasma';
 
 export interface CinematicSettings {
-  timeOfDay: number; // 0-24
+  timeOfDay: number;
   shadows: boolean;
   atmosphericHaze: boolean;
   waterGlow: boolean;
@@ -210,4 +210,45 @@ export interface User {
   id: string;
   email: string;
   name?: string;
+}
+
+// ═══════════════════════════════════════════
+// TEXT OVERLAY TYPES
+// ═══════════════════════════════════════════
+
+export type OverlayFontFamily = 'serif' | 'sans' | 'mono';
+export type OverlayPosition = 'top-left' | 'top-center' | 'top-right' | 'center' | 'bottom-left' | 'bottom-center' | 'bottom-right';
+export type OverlayFrameStyle = 'none' | 'thin' | 'thick' | 'double' | 'ornate';
+
+export interface TextOverlaySettings {
+  enabled: boolean;
+  title: string;
+  titleFontFamily: OverlayFontFamily;
+  titleFontSize: number;
+  titleColor: string;
+  titlePosition: OverlayPosition;
+  titleUppercase: boolean;
+  titleLetterSpacing: number;
+  subtitle: string;
+  subtitleFontFamily: OverlayFontFamily;
+  subtitleFontSize: number;
+  subtitleColor: string;
+  subtitleUppercase: boolean;
+  showCoordinates: boolean;
+  frameStyle: OverlayFrameStyle;
+  frameColor: string;
+  framePadding: number;
+}
+
+export interface MapPreset {
+  id: string;
+  name: string;
+  description: string;
+  thumbnail: string;
+  style: MapStyle;
+  pitch: number;
+  bearing: number;
+  zoom: number;
+  textOverlay: Partial<TextOverlaySettings>;
+  styleSettings?: Record<string, unknown>;
 }
